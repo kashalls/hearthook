@@ -1,0 +1,20 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "hearthook"
+main = "src/index.ts"
+compatibility_date = "2024-07-29"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+# Every 3rd minute
+crons = ["*/3 * * * *"]
+
+[[kv_namespaces]]
+binding = "HEARTHOOK_CHECKINS"
+id = "240aea733d4140b89444789f4b596d8f"
+
+[vars]
+# Minutes
+HEARTHOOK_INTERVAL="3"
+PUSHOVER_DEVICE=""
+PUSHOVER_PRIORITY=""
+PUSHOVER_TTL=""
