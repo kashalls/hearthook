@@ -2,7 +2,7 @@ const PushoverEndpoint = 'https://api.pushover.net/1/messages.json'
 
 type HearthookData = {
 	id: string;
-	timestamp: number;
+	timestamp: string;
 	count: number;
 	status: boolean
 }
@@ -25,16 +25,19 @@ type PushoverMessageData = {
 	url_title?: string;
 }
 
+const capitalize = <T extends string>(s: T) => (s[0].toUpperCase() + s.slice(1)) as Capitalize<typeof s>;
+
 export async function pushover(env: Env, data: HearthookData): Promise<void> {
 
+	console.log(`Pushover - ${JSON.stringify(data)}`)
 	const time = formatLargestDifference(data.timestamp, Date.now())
 
 	const message = data.status
-		? `${data.id} has checked after ${time}.`
-		: `${data.id} failed to check in within ${time}.`
+		? `${capitalize(data.id)} has checked in after not being seen ${time} ago.`
+		: `${capitalize(data.id)} has not send a heartbeat within the required interval. It was last seen ${time} ago.`
 
 	let payload: Partial<PushoverMessageData> = {
-		title: `Endpoint ${data.status ? 'Up' : 'Down'}`,
+		title: `${capitalize(data.id)} is ${data.status ? 'Up' : 'Down'}`,
 		message,
 		token: env.PUSHOVER_TOKEN,
 		user: env.PUSHOVER_USER_KEY,
@@ -43,9 +46,13 @@ export async function pushover(env: Env, data: HearthookData): Promise<void> {
 	if (env.PUSHOVER_DEVICE) payload.device = env.PUSHOVER_DEVICE
 	if (env.PUSHOVER_TTL) payload.ttl = env.PUSHOVER_TTL
 
+	console.log(JSON.stringify(payload))
 	const response = await fetch(PushoverEndpoint, {
 		method: 'POST',
-		body: JSON.stringify(payload)
+		body: JSON.stringify(payload),
+		headers: {
+			"content-type": "application/json;charset=UTF-8",
+		},
 	})
 
 	if (!response.ok) {
@@ -54,7 +61,7 @@ export async function pushover(env: Env, data: HearthookData): Promise<void> {
 	}
 }
 
-function formatLargestDifference(start: string, end: string): string {
+export function formatLargestDifference(start: string, end: number): string {
     const startDate = new Date(start);
     const endDate = new Date(end);
     const diffInMilliseconds = endDate.getTime() - startDate.getTime();
